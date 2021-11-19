@@ -1,18 +1,23 @@
-import * as GameTest from "mojang-gametest";
+import { Queue } from "./Queue.js";
+
 import {
   world,
   BlockLocation,
   MinecraftBlockTypes,
   BeforeChatEvent,
   TickEvent,
+  Player,
   PlayerJoinEvent,
 } from "mojang-minecraft";
 
-const START_TICK = 100;
 const overworld = world.getDimension("overworld");
 
+// Set global state
+overworld.runCommand("structure load lobby -5 0 -5");
+overworld.runCommand("setworldspawn 0 3 0");
+
 // global variables
-let curTick = 0;
+let newPlayersQueue = new Queue<Player>();
 
 function initializeGame() {
   // Add the score scoreboard
@@ -58,7 +63,7 @@ function startGame() {
   for (let i = 0; i < playerCount; i++) {
     let x = 100 * i;
     let y = 0;
-    let z = 0;
+    let z = 100;
     players[i].runCommand(`structure load arena ${x} ${y} ${z}`);
 
     x += 8;
@@ -78,9 +83,19 @@ function endGame() {
   // When the timer hits zero, call this method.
 }
 
+//
+// Event handlers
+//
+
 function gameTick(event: TickEvent) {
-  if (event.currentTick % 20 == 0) {
-    // Count down 1 second
+  // Teleport any new players to the arena, NOTE: this still doesn't work as
+  //   at least the first player isn't fully there even when this runs at the end
+  //   of the frame.  Will probably need to add a tick delay.
+  while (!newPlayersQueue.isEmpty) {
+    let newPlayer = newPlayersQueue.dequeue();
+    if (newPlayer) {
+      newPlayer.runCommand("tp @s 0 3 0");
+    }
   }
 }
 world.events.tick.subscribe(gameTick);
@@ -112,6 +127,7 @@ function beforeChat(event: BeforeChatEvent) {
 world.events.beforeChat.subscribe(beforeChat);
 
 function playerJoin(event: PlayerJoinEvent) {
-  event.player.runCommand("tp NuclearToaster 0 3 0");
+  newPlayersQueue.enqueue(event.player);
+  //event.player.runCommand("tp @s 0 3 0");
 }
 world.events.playerJoin.subscribe(playerJoin);
