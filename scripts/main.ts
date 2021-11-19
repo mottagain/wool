@@ -1,5 +1,3 @@
-import { Queue } from "./Queue.js";
-
 import {
   world,
   BlockLocation,
@@ -17,7 +15,7 @@ overworld.runCommand("structure load lobby -5 0 -5");
 overworld.runCommand("setworldspawn 0 3 0");
 
 // global variables
-let newPlayersQueue = new Queue<Player>();
+let newPlayersQueue = new Array<Player>();
 
 function initializeGame() {
   // Add the score scoreboard
@@ -71,7 +69,6 @@ function startGame() {
     players[i].runCommand(`tp @s ${x} ${y} ${z}`);
   }
 
-  //   Teleport each player to their own arena
   // Set game timer
   // Start decrementing timer
   //
@@ -86,16 +83,19 @@ function endGame() {
 //
 // Event handlers
 //
-
+let firstTick = 0;
 function gameTick(event: TickEvent) {
-  // Teleport any new players to the arena, NOTE: this still doesn't work as
-  //   at least the first player isn't fully there even when this runs at the end
-  //   of the frame.  Will probably need to add a tick delay.
-  while (!newPlayersQueue.isEmpty) {
-    let newPlayer = newPlayersQueue.dequeue();
-    if (newPlayer) {
-      newPlayer.runCommand("tp @s 0 3 0");
-    }
+  if (firstTick == 0) firstTick = event.currentTick;
+
+  // Teleport new players to the lobby.  Needed to be defered to end of frame to work, adding a bug for
+  for (let i = 0; i < newPlayersQueue.length; i++) {
+    let newPlayer = newPlayersQueue[i];
+    newPlayer.runCommand("tp @s 0 3 0");
+  }
+  newPlayersQueue = [];
+
+  if (event.currentTick % 100 == 0) {
+    overworld.runCommand(`say Tick ${event.currentTick}`);
   }
 }
 world.events.tick.subscribe(gameTick);
@@ -127,7 +127,9 @@ function beforeChat(event: BeforeChatEvent) {
 world.events.beforeChat.subscribe(beforeChat);
 
 function playerJoin(event: PlayerJoinEvent) {
-  newPlayersQueue.enqueue(event.player);
+  // This must be deferred due to a bug.
   //event.player.runCommand("tp @s 0 3 0");
+
+  newPlayersQueue.push(event.player);
 }
 world.events.playerJoin.subscribe(playerJoin);

@@ -30,7 +30,7 @@ gulp.task(
           moduleResolution: "node",
           strict: true,
           noImplicitAny: true,
-          lib: ["es2020"],
+          lib: ["es2020", "dom"],
         })
       )
       .pipe(gulp.dest("build/behavior_packs/" + bpfoldername + "/scripts"));
