@@ -7,7 +7,8 @@
         "name": "Wait for Minecraft Debug Connections",
         "mode": "listen",
         "localRoot": "${workspaceFolder}/build/behavior_packs/wool_behaviors/",
-        "port": 19145
+        "port": 19145,
+        "preLaunchTask": "gulp"
       }
     ]
   }
