@@ -1,5 +1,12 @@
 import * as GameTest from "mojang-gametest";
-import { world, BlockLocation, MinecraftBlockTypes, BeforeChatEvent, TickEvent } from "mojang-minecraft";
+import {
+  world,
+  BlockLocation,
+  MinecraftBlockTypes,
+  BeforeChatEvent,
+  TickEvent,
+  PlayerJoinEvent,
+} from "mojang-minecraft";
 
 const START_TICK = 100;
 const overworld = world.getDimension("overworld");
@@ -14,7 +21,7 @@ function initializeGame() {
   } catch (e) {}
 
   overworld.runCommand("scoreboard players set @a score 0");
-  overworld.runCommand('scoreboard objectives setdisplay sidebar "Score" descending');
+  overworld.runCommand("scoreboard objectives setdisplay sidebar score descending");
 
   // eliminate pesky nearby mobs
   try {
@@ -52,7 +59,7 @@ function startGame() {
     let x = 100 * i;
     let y = 0;
     let z = 0;
-    players[i].runCommand(`structure load Arena ${x} ${y} ${z}`);
+    players[i].runCommand(`structure load arena ${x} ${y} ${z}`);
 
     x += 8;
     y += 1;
@@ -103,3 +110,8 @@ function beforeChat(event: BeforeChatEvent) {
   }
 }
 world.events.beforeChat.subscribe(beforeChat);
+
+function playerJoin(event: PlayerJoinEvent) {
+  event.player.runCommand("tp NuclearToaster 0 3 0");
+}
+world.events.playerJoin.subscribe(playerJoin);
