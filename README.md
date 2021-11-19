@@ -1,0 +1,2 @@
+# wool
+Minecraft Wool Minigame.
