@@ -7,10 +7,9 @@ const gulp = require("gulp");
 const ts = require("gulp-typescript");
 const del = require("del");
 const os = require("os");
+const config = require("./config.json");
 
-//let mcdir = os.homedir() + "/AppData/Local/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState/games/com.mojang/";
-let mcdir =
-  os.homedir() + "/AppData/Local/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState/games/com.mojang/";
+let mcdir = os.homedir() + config.mcDirectory;
 
 gulp.task("clean-build", function () {
   return del(["build/behavior_packs/"]);

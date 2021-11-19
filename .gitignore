@@ -3,3 +3,6 @@ node_modules/
 
 # Build output
 build/
+
+# dev spesific config values
+config.json
