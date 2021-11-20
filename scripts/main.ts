@@ -10,6 +10,7 @@ import {
   BlockInventoryComponentContainer,
   Container,
   MinecraftItemTypes,
+  PistonActivateEvent,
 } from "mojang-minecraft";
 
 const overworld = world.getDimension("overworld");
@@ -20,7 +21,7 @@ overworld.runCommand("setworldspawn 0 3 0");
 cleanupGame();
 
 // global variables
-let newPlayersQueue = new Array<Player>();
+let deferredActions = new Array<[() => void, number]>();
 let roundRemaingingTime = -1;
 
 function initializeGame() {
@@ -98,10 +99,17 @@ function endGame() {
   // Say who won
 }
 
-function handlePlayerJoin(player: Player) {
-  player.runCommand("tp @s 0 3 0 facing 0 3 1");
-  player.runCommand("title @s subtitle PhD Game Design");
-  player.runCommand("title @s title Wool");
+function runDeferredActions() {
+  for (let i = deferredActions.length - 1; i >= 0; i--) {
+    let [lambda, ticks] = deferredActions[i];
+
+    if (ticks-- <= 0) {
+      lambda();
+      deferredActions.splice(i, 1);
+    } else {
+      deferredActions[i] = [lambda, ticks];
+    }
+  }
 }
 
 function updateTimeRemaining(tick: number) {
@@ -170,11 +178,7 @@ let firstTick = 0;
 function gameTick(event: TickEvent) {
   if (firstTick == 0) firstTick = event.currentTick;
 
-  // Teleport new players to the lobby.  Needed to be defered to end of frame to work, adding a bug for
-  for (let i = 0; i < newPlayersQueue.length; i++) {
-    handlePlayerJoin(newPlayersQueue[i]);
-  }
-  newPlayersQueue = [];
+  runDeferredActions();
 
   updateTimeRemaining(event.currentTick);
 
@@ -209,9 +213,29 @@ function beforeChat(event: BeforeChatEvent) {
 world.events.beforeChat.subscribe(beforeChat);
 
 function playerJoin(event: PlayerJoinEvent) {
-  // This must be deferred due to a bug.
-  //event.player.runCommand("tp @s 0 3 0");
+  // Teleporting the player must be deferred by 1 tick due to an observability issue.
+  let player = event.player;
+  deferredActions.push([
+    function () {
+      player.runCommand("tp @s 0 3 0 facing 0 3 1");
+    },
+    1,
+  ]);
 
-  newPlayersQueue.push(event.player);
+  // Title must be deferred by many ticks due to an observability issue.
+  deferredActions.push([
+    function () {
+      player.runCommand("title @a subtitle PhD level games");
+      player.runCommand("title @a title Wool");
+    },
+    30,
+  ]);
 }
 world.events.playerJoin.subscribe(playerJoin);
+
+// We're using a piston activate event to detect a press of the only button
+//  in the world, the one to start the game.  We should add a button event.
+function pistonActivate(event: PistonActivateEvent) {
+  startGame();
+}
+world.events.pistonActivate.subscribe(pistonActivate);
