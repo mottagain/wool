@@ -17,7 +17,11 @@ const overworld = world.getDimension("overworld");
 
 // Set global state
 overworld.runCommand("structure load lobby -5 0 -5");
-overworld.runCommand("setworldspawn 0 3 0");
+overworld.runCommand("gamerule doDaylightCycle false");
+overworld.runCommand("gamerule doMobSpawning false");
+overworld.runCommand("gamerule doWeatherCycle false");
+overworld.runCommand("gamerule randomtickspeed 6");
+overworld.runCommand("gamerule sendCommandFeedback false");
 cleanupGame();
 
 // global variables
@@ -50,9 +54,11 @@ function cleanupGame() {
     overworld.runCommand("clear @a");
   } catch (e) {}
 
-  // eliminate pesky nearby mobs
+  // eliminate pesky nearby mobs, and turn off drops
   try {
+    overworld.runCommand("gamerule doMobLoot false");
     overworld.runCommand("kill @e[type=!player]");
+    overworld.runCommand("gamerule doMobLoot true");
   } catch (e) {}
 }
 
@@ -174,10 +180,7 @@ function updateScore() {
 //
 // Event handlers
 //
-let firstTick = 0;
 function gameTick(event: TickEvent) {
-  if (firstTick == 0) firstTick = event.currentTick;
-
   runDeferredActions();
 
   updateTimeRemaining(event.currentTick);
@@ -223,12 +226,13 @@ function playerJoin(event: PlayerJoinEvent) {
   ]);
 
   // Title must be deferred by many ticks due to an observability issue.
+  //   This delay is a race condition.  We may need a concept of when a player is fully added.
   deferredActions.push([
     function () {
-      player.runCommand("title @a subtitle PhD level games");
-      player.runCommand("title @a title Wool");
+      player.runCommand("title @s subtitle PhD level games");
+      player.runCommand("title @s title Wool");
     },
-    30,
+    40,
   ]);
 }
 world.events.playerJoin.subscribe(playerJoin);
