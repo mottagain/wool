@@ -266,6 +266,8 @@ world.events.playerJoin.subscribe(playerJoin);
 // We're using a piston activate event to detect a press of the only button
 //  in the world, the one to start the game.  We should add a button event.
 function pistonActivate(event: PistonActivateEvent) {
-  startGame();
+  if (event.isExpanding) {
+    startGame();
+  }
 }
 world.events.pistonActivate.subscribe(pistonActivate);
