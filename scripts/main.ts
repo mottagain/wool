@@ -16,6 +16,7 @@ overworld.runCommand("setworldspawn 0 3 0");
 
 // global variables
 let newPlayersQueue = new Array<Player>();
+let roundRemaingingTime = -1;
 
 function initializeGame() {
   // Add the score scoreboard
@@ -66,18 +67,20 @@ function startGame() {
 
     x += 8;
     y += 1;
-    players[i].runCommand(`tp @s ${x} ${y} ${z}`);
+    players[i].runCommand(`tp @s ${x} ${y} ${z} facing ${x} ${y} ${z + 1}`);
   }
 
-  // Set game timer
-  // Start decrementing timer
-  //
+  overworld.runCommand("title @a title GO!");
 
-  overworld.runCommand("say Collect Wool!");
+  // Set game timer
+  roundRemaingingTime = 10;
 }
 
 function endGame() {
-  // When the timer hits zero, call this method.
+  overworld.runCommand("say Game Over");
+  overworld.runCommand("tp @a 0 3 0");
+
+  // Say who won
 }
 
 //
@@ -94,8 +97,22 @@ function gameTick(event: TickEvent) {
   }
   newPlayersQueue = [];
 
-  if (event.currentTick % 100 == 0) {
-    overworld.runCommand(`say Tick ${event.currentTick}`);
+  if (roundRemaingingTime >= 0) {
+    // Show the time to all players
+    let minutes = Math.floor(roundRemaingingTime / 60);
+    let seconds: string = (roundRemaingingTime % 60).toString();
+    while (seconds.length < 2) seconds = "0" + seconds;
+    overworld.runCommand(`title @a actionbar ${minutes}:${seconds}`);
+
+    // Decrement remaining time
+    if (event.currentTick % 20 == 0) {
+      roundRemaingingTime--;
+
+      // End the game if time has elapsed
+      if (roundRemaingingTime < 0) {
+        endGame();
+      }
+    }
   }
 }
 world.events.tick.subscribe(gameTick);
