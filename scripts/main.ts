@@ -22,14 +22,18 @@ overworld.runCommand("gamerule doMobSpawning false");
 overworld.runCommand("gamerule doWeatherCycle false");
 overworld.runCommand("gamerule randomtickspeed 6");
 overworld.runCommand("gamerule sendCommandFeedback false");
-cleanupGame();
 
 // global variables
 let deferredActions = new Array<[() => void, number]>();
 let roundRemaingingTime = -1;
+let winningPlayerName = "";
+let winningScore = 0;
 
 function initializeGame() {
   cleanupGame();
+
+  winningPlayerName = "";
+  winningScore = 0;
 
   // Add the score scoreboard
   try {
@@ -97,12 +101,18 @@ function endGame() {
   // Force round timer to complete so game can be force ended with debug commands
   roundRemaingingTime = -1;
 
-  overworld.runCommand("say Game Over");
   overworld.runCommand("tp @a 0 3 0");
+  overworld.runCommand("title @a clear");
+
+  if (winningScore > 0) {
+    overworld.runCommand(`title @a subtitle ${winningPlayerName} wins!`);
+    overworld.runCommand("title @a title Game Over");
+  } else {
+    overworld.runCommand(`title @a subtitle Nobody scored. What gives?`);
+    overworld.runCommand("title @a title Game Over");
+  }
 
   cleanupGame();
-
-  // Say who won
 }
 
 function runDeferredActions() {
@@ -172,6 +182,11 @@ function updateScore() {
         }
       }
 
+      if (playerScore > winningScore) {
+        winningScore = playerScore;
+        winningPlayerName = players[i].name;
+      }
+
       players[i].runCommand(`scoreboard players set @s score ${playerScore}`);
     }
   }
@@ -232,7 +247,7 @@ function playerJoin(event: PlayerJoinEvent) {
       player.runCommand("title @s subtitle PhD level games");
       player.runCommand("title @s title Wool");
     },
-    40,
+    60,
   ]);
 }
 world.events.playerJoin.subscribe(playerJoin);
