@@ -6,6 +6,10 @@ import {
   TickEvent,
   Player,
   PlayerJoinEvent,
+  BlockInventoryComponent,
+  BlockInventoryComponentContainer,
+  Container,
+  MinecraftItemTypes,
 } from "mojang-minecraft";
 
 const overworld = world.getDimension("overworld");
@@ -13,12 +17,15 @@ const overworld = world.getDimension("overworld");
 // Set global state
 overworld.runCommand("structure load lobby -5 0 -5");
 overworld.runCommand("setworldspawn 0 3 0");
+cleanupGame();
 
 // global variables
 let newPlayersQueue = new Array<Player>();
 let roundRemaingingTime = -1;
 
 function initializeGame() {
+  cleanupGame();
+
   // Add the score scoreboard
   try {
     overworld.runCommand('scoreboard objectives add score dummy "Score"');
@@ -26,11 +33,6 @@ function initializeGame() {
 
   overworld.runCommand("scoreboard players set @a score 0");
   overworld.runCommand("scoreboard objectives setdisplay sidebar score descending");
-
-  // eliminate pesky nearby mobs
-  try {
-    overworld.runCommand("kill @e[type=!player]");
-  } catch (e) {}
 
   // Set up intial inventory
   overworld.runCommand("give @a shears");
@@ -46,9 +48,16 @@ function cleanupGame() {
   try {
     overworld.runCommand("clear @a");
   } catch (e) {}
+
+  // eliminate pesky nearby mobs
+  try {
+    overworld.runCommand("kill @e[type=!player]");
+  } catch (e) {}
 }
 
 function startGame() {
+  initializeGame();
+
   // Get count of players
   let players = world.getPlayers();
   let playerCount = players.length;
@@ -70,17 +79,29 @@ function startGame() {
     players[i].runCommand(`tp @s ${x} ${y} ${z} facing ${x} ${y} ${z + 1}`);
   }
 
+  overworld.runCommand("title @a clear");
   overworld.runCommand("title @a title GO!");
 
   // Set game timer
-  roundRemaingingTime = 10;
+  roundRemaingingTime = 180;
 }
 
 function endGame() {
+  // Force round timer to complete so game can be force ended with debug commands
+  roundRemaingingTime = -1;
+
   overworld.runCommand("say Game Over");
   overworld.runCommand("tp @a 0 3 0");
 
+  cleanupGame();
+
   // Say who won
+}
+
+function handlePlayerJoin(player: Player) {
+  player.runCommand("tp @s 0 3 0 facing 0 3 1");
+  player.runCommand("title @s subtitle PhD Game Design");
+  player.runCommand("title @s title Wool");
 }
 
 function updateTimeRemaining(tick: number) {
@@ -103,6 +124,45 @@ function updateTimeRemaining(tick: number) {
   }
 }
 
+function updateScore() {
+  if (roundRemaingingTime >= 0) {
+    let players = world.getPlayers();
+
+    //   Create arena copy for each player
+    for (let i = 0; i < players.length; i++) {
+      let playerScore = 0;
+      let chestBlock = overworld.getBlock(new BlockLocation(12 + 100 * i, 6, 130));
+
+      let chest: BlockInventoryComponentContainer = chestBlock.getComponent("inventory").container;
+      for (let j = 0; j < chest.size; j++) {
+        let itemStack = chest.getItem(j);
+        if (itemStack && itemStack.id == MinecraftItemTypes.wool.getName()) {
+          switch (itemStack.data) {
+            case 2: // Purple
+              playerScore += 5 * itemStack.amount;
+              break;
+            case 11: // Blue
+              playerScore += 3 * itemStack.amount;
+              break;
+            case 14: // Red
+              playerScore += 2 * itemStack.amount;
+              break;
+            case 15: // Black
+              playerScore += 10 * itemStack.amount;
+              break;
+            default:
+              // White & all others
+              playerScore += 1 * itemStack.amount;
+              break;
+          }
+        }
+      }
+
+      players[i].runCommand(`scoreboard players set @s score ${playerScore}`);
+    }
+  }
+}
+
 //
 // Event handlers
 //
@@ -112,12 +172,13 @@ function gameTick(event: TickEvent) {
 
   // Teleport new players to the lobby.  Needed to be defered to end of frame to work, adding a bug for
   for (let i = 0; i < newPlayersQueue.length; i++) {
-    let newPlayer = newPlayersQueue[i];
-    newPlayer.runCommand("tp @s 0 3 0");
+    handlePlayerJoin(newPlayersQueue[i]);
   }
   newPlayersQueue = [];
 
   updateTimeRemaining(event.currentTick);
+
+  updateScore();
 }
 world.events.tick.subscribe(gameTick);
 
