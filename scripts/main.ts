@@ -18,10 +18,13 @@ const overworld = world.getDimension("overworld");
 // Set global state
 overworld.runCommand("structure load lobby -5 0 -5");
 overworld.runCommand("gamerule doDaylightCycle false");
+overworld.runCommand("gamerule doMobLoot false");
 overworld.runCommand("gamerule doMobSpawning false");
 overworld.runCommand("gamerule doWeatherCycle false");
 overworld.runCommand("gamerule randomtickspeed 6");
 overworld.runCommand("gamerule sendCommandFeedback false");
+
+cleanupGame();
 
 // global variables
 let deferredActions = new Array<[() => void, number]>();
@@ -58,11 +61,9 @@ function cleanupGame() {
     overworld.runCommand("clear @a");
   } catch (e) {}
 
-  // eliminate pesky nearby mobs, and turn off drops
+  // eliminate pesky nearby mobs
   try {
-    overworld.runCommand("gamerule doMobLoot false");
     overworld.runCommand("kill @e[type=!player]");
-    overworld.runCommand("gamerule doMobLoot true");
   } catch (e) {}
 }
 
@@ -87,6 +88,7 @@ function startGame() {
 
     x += 8;
     y += 1;
+    z += 1;
     players[i].runCommand(`tp @s ${x} ${y} ${z} facing ${x} ${y} ${z + 1}`);
   }
 
@@ -101,15 +103,24 @@ function endGame() {
   // Force round timer to complete so game can be force ended with debug commands
   roundRemaingingTime = -1;
 
-  overworld.runCommand("tp @a 0 3 0");
-  overworld.runCommand("title @a clear");
+  try {
+    overworld.runCommand("tp @a 0 3 0");
+  } catch (e) {}
+
+  try {
+    overworld.runCommand("title @a clear");
+  } catch (e) {}
 
   if (winningScore > 0) {
-    overworld.runCommand(`title @a subtitle ${winningPlayerName} wins!`);
-    overworld.runCommand("title @a title Game Over");
+    try {
+      overworld.runCommand(`title @a subtitle ${winningPlayerName} wins!`);
+      overworld.runCommand("title @a title Game Over");
+    } catch (e) {}
   } else {
-    overworld.runCommand(`title @a subtitle Nobody scored. What gives?`);
-    overworld.runCommand("title @a title Game Over");
+    try {
+      overworld.runCommand(`title @a subtitle Nobody scored. What gives?`);
+      overworld.runCommand("title @a title Game Over");
+    } catch (e) {}
   }
 
   cleanupGame();
@@ -155,7 +166,7 @@ function updateScore() {
     //   Create arena copy for each player
     for (let i = 0; i < players.length; i++) {
       let playerScore = 0;
-      let chestBlock = overworld.getBlock(new BlockLocation(12 + 100 * i, 6, 130));
+      let chestBlock = overworld.getBlock(new BlockLocation(13 + 100 * i, 6, 131));
 
       let chest: BlockInventoryComponentContainer = chestBlock.getComponent("inventory").container;
       for (let j = 0; j < chest.size; j++) {
