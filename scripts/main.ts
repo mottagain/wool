@@ -83,6 +83,26 @@ function endGame() {
   // Say who won
 }
 
+function updateTimeRemaining(tick: number) {
+  if (roundRemaingingTime >= 0) {
+    // Show the time to all players
+    let minutes = Math.floor(roundRemaingingTime / 60);
+    let seconds: string = (roundRemaingingTime % 60).toString();
+    while (seconds.length < 2) seconds = "0" + seconds;
+    overworld.runCommand(`title @a actionbar ${minutes}:${seconds}`);
+
+    // Decrement remaining time
+    if (tick % 20 == 0) {
+      roundRemaingingTime--;
+
+      // End the game if time has elapsed
+      if (roundRemaingingTime < 0) {
+        endGame();
+      }
+    }
+  }
+}
+
 //
 // Event handlers
 //
@@ -97,23 +117,7 @@ function gameTick(event: TickEvent) {
   }
   newPlayersQueue = [];
 
-  if (roundRemaingingTime >= 0) {
-    // Show the time to all players
-    let minutes = Math.floor(roundRemaingingTime / 60);
-    let seconds: string = (roundRemaingingTime % 60).toString();
-    while (seconds.length < 2) seconds = "0" + seconds;
-    overworld.runCommand(`title @a actionbar ${minutes}:${seconds}`);
-
-    // Decrement remaining time
-    if (event.currentTick % 20 == 0) {
-      roundRemaingingTime--;
-
-      // End the game if time has elapsed
-      if (roundRemaingingTime < 0) {
-        endGame();
-      }
-    }
-  }
+  updateTimeRemaining(event.currentTick);
 }
 world.events.tick.subscribe(gameTick);
 
