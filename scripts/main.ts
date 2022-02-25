@@ -71,19 +71,19 @@ function startGame() {
   initializeGame();
 
   // Get count of players
-  let players = world.getPlayers();
-  let playerCount = players.length;
+  const players = Array.from(world.getPlayers());
+  const playerCount = players.length;
   if (playerCount > 1) {
-    overworld.runCommand(`say Staring game for ${playerCount} players.`);
+    overworld.runCommand(`say Starting game for ${playerCount} players.`);
   } else {
-    overworld.runCommand(`say Staring game for ${playerCount} player.`);
+    overworld.runCommand(`say Starting game for ${playerCount} player.`);
   }
 
   //   Create arena copy for each player
-  for (let i = 0; i < playerCount; i++) {
-    let x = 100 * i;
-    let y = 0;
-    let z = 100;
+  for (var i = 0; i < playerCount; i++) {
+    var x = 100 * i;
+    var y = 0;
+    var z = 100;
     players[i].runCommand(`structure load arena ${x} ${y} ${z}`);
 
     x += 8;
@@ -161,7 +161,7 @@ function updateTimeRemaining(tick: number) {
 
 function updateScore() {
   if (roundRemaingingTime >= 0) {
-    let players = world.getPlayers();
+    let players = Array.from(world.getPlayers());
 
     //   Create arena copy for each player
     for (let i = 0; i < players.length; i++) {
@@ -171,7 +171,7 @@ function updateScore() {
       let chest: BlockInventoryComponentContainer = chestBlock.getComponent("inventory").container;
       for (let j = 0; j < chest.size; j++) {
         let itemStack = chest.getItem(j);
-        if (itemStack && itemStack.id == MinecraftItemTypes.wool.getName()) {
+        if (itemStack && itemStack.id == MinecraftItemTypes.wool.id) {
           switch (itemStack.data) {
             case 2: // Purple
               playerScore += 5 * itemStack.amount;
