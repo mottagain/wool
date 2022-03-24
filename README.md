@@ -17,7 +17,7 @@ Minecraft Wool Minigame.
     ```
   - Clone the repository
   - run `npm update` in the repo directory
-  - run `npm install gulp`
+  - run `npm install -g gulp-cli`
 
 - Each time:
 
