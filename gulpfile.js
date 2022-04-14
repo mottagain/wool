@@ -30,6 +30,7 @@ gulp.task(
           moduleResolution: "node",
           strict: true,
           noImplicitAny: true,
+          target: "es2020",
           lib: ["es2020", "dom"],
         })
       )
