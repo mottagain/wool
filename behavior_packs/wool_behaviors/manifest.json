@@ -10,7 +10,8 @@
   "modules": [
     {
       "description": "Wool scripts",
-      "type": "javascript",
+      "type": "script",
+      "language": "javascript",      
       "uuid": "882d1c5f-0405-4c3b-8bcb-fa0579bab692",
       "version": [0, 0, 1],
       "entry": "scripts/main.js"
